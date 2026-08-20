@@ -96,7 +96,13 @@ export type Wallet = {
   balance: number;
 };
 
-export type WalletActivityKind = "topup" | "transfer" | "create";
+export type WalletActivityKind =
+  | "topup"
+  | "transfer"
+  | "create"
+  | "rename"
+  | "delete"
+  | "profile";
 
 export type WalletActivity = {
   id: string;
