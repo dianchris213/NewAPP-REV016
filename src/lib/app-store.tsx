@@ -186,7 +186,8 @@ type AppState = {
   notifications: AppNotification[];
   unreadCount: number;
   markNotificationsRead: () => void;
-  updateProfile: (update: { name?: string; avatar?: string }) => void;
+  updateProfile: (update: { name?: string; avatar?: string }) => Promise<boolean>;
+  profileSaving: boolean;
   txFilters: TxFilters;
   setTxFilters: (update: Partial<TxFilters>) => void;
   resetTxFilters: () => void;
