@@ -251,7 +251,8 @@ const WALLET_TYPES: WalletType[] = ["cash", "bank", "ewallet"];
 
 /** Manage user-owned fund sources (Sumber Dana). Empty by default. */
 function FundSourceSheet({ onClose }: { onClose: () => void }) {
-  const { language, wallets, addWallet, renameWallet, deleteWallet, walletUsage } = useApp();
+  const { language, wallets, addWallet, renameWallet, deleteWallet, walletUsage, walletPending } =
+    useApp();
   const copy = t(language);
   const ref = useModalA11y<HTMLDivElement>(true, onClose);
   const [name, setName] = useState("");
@@ -274,10 +275,18 @@ function FundSourceSheet({ onClose }: { onClose: () => void }) {
     else toast.error(message);
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (walletPending.add) return;
     const numeric = Number(balance.replace(/\D/g, "")) || 0;
-    const ok = addWallet({ name, type, balance: numeric });
+    const trimmed = name.trim().replace(/\s+/g, " ");
+    const duplicate = wallets.some((w) => w.name.toLowerCase() === trimmed.toLowerCase());
+    if (trimmed.length < 2 || trimmed.length > 24 || duplicate) {
+      setError(copy.invalidFundSource);
+      announce(copy.invalidFundSource, false);
+      return;
+    }
+    const ok = await addWallet({ name: trimmed, type, balance: numeric });
     if (!ok) {
       setError(copy.invalidFundSource);
       announce(copy.invalidFundSource, false);
@@ -289,8 +298,9 @@ function FundSourceSheet({ onClose }: { onClose: () => void }) {
     announce(copy.fundSourceAdded, true);
   };
 
-  const commitRename = (id: string) => {
-    if (!renameWallet(id, editingName)) {
+  const commitRename = async (id: string) => {
+    if (walletPending.byId[id]) return;
+    if (!(await renameWallet(id, editingName))) {
       setRowError({ id, message: copy.invalidFundSource });
       announce(copy.invalidFundSource, false);
       return;
@@ -301,8 +311,9 @@ function FundSourceSheet({ onClose }: { onClose: () => void }) {
     announce(copy.fundSourceRenamed, true);
   };
 
-  const remove = (id: string) => {
-    if (walletUsage(id) > 0 || !deleteWallet(id)) {
+  const remove = async (id: string) => {
+    if (walletPending.byId[id]) return;
+    if (walletUsage(id) > 0 || !(await deleteWallet(id))) {
       setRowError({ id, message: copy.fundSourceInUse });
       announce(copy.fundSourceInUse, false);
       return;
