@@ -331,7 +331,8 @@ function FundSourceSheet({ onClose }: { onClose: () => void }) {
         ref={ref}
         role="dialog"
         aria-modal="true"
-        aria-label={copy.fundSources}
+        aria-labelledby="fund-source-title"
+        aria-describedby="fund-source-hint"
         data-testid="fund-source-sheet"
         onClick={(e) => e.stopPropagation()}
         className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-[26px] border-t border-outline-variant/20 bg-surface-container-high p-5 pb-[calc(env(safe-area-inset-bottom,0px)+20px)] shadow-2xl"
@@ -341,7 +342,9 @@ function FundSourceSheet({ onClose }: { onClose: () => void }) {
           className="mx-auto mb-3 block h-1 w-10 rounded-full bg-outline-variant/60"
         />
         <div className="flex items-center justify-between">
-          <h3 className="m-0 text-title text-on-surface">{copy.fundSources}</h3>
+          <h3 id="fund-source-title" className="m-0 text-title text-on-surface">
+            {copy.fundSources}
+          </h3>
           <button
             type="button"
             aria-label={copy.close}
@@ -358,9 +361,18 @@ function FundSourceSheet({ onClose }: { onClose: () => void }) {
             <input
               value={name}
               maxLength={24}
+              required
+              autoComplete="off"
+              data-autofocus
               data-testid="fund-source-name"
               aria-invalid={!!error}
-              onChange={(e) => setName(e.target.value)}
+              aria-errormessage={error ? "fund-source-error" : undefined}
+              aria-describedby="fund-source-hint"
+              disabled={walletPending.add}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (error) setError(undefined);
+              }}
               className="h-12 rounded-2xl border border-outline-variant/30 bg-surface-container px-4 text-[14px] text-on-surface outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             />
           </label>
@@ -389,25 +401,42 @@ function FundSourceSheet({ onClose }: { onClose: () => void }) {
               className="h-12 rounded-2xl border border-outline-variant/30 bg-surface-container px-4 text-[14px] text-on-surface outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             />
           </label>
+          <p id="fund-source-hint" className="m-0 text-[11px] text-on-surface-variant/70">
+            {copy.fundSourceHint}
+          </p>
           {error ? (
-            <p role="alert" className="m-0 text-[11px] font-semibold text-error">
+            <p
+              id="fund-source-error"
+              role="alert"
+              data-testid="fund-source-form-error"
+              className="m-0 text-[11px] font-semibold text-error"
+            >
               {error}
             </p>
           ) : null}
           <button
             type="submit"
             data-testid="fund-source-submit"
-            className="gradient-primary h-12 rounded-full text-[13px] font-bold text-on-primary-container transition-transform active:scale-95"
+            disabled={walletPending.add}
+            aria-busy={walletPending.add}
+            className="gradient-primary flex h-12 items-center justify-center gap-2 rounded-full text-[13px] font-bold text-on-primary-container transition-transform active:scale-95 disabled:opacity-60"
           >
-            {copy.addFundSource}
+            {walletPending.add ? (
+              <Icon name="progress_activity" className="animate-spin text-[18px]" />
+            ) : null}
+            {walletPending.add ? copy.saving : copy.addFundSource}
           </button>
         </form>
 
-        <p aria-live="polite" className="sr-only">
+        <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
           {status}
         </p>
 
-        <ul className="mt-4 list-none rounded-2xl bg-surface-container px-4 py-1">
+        <ul
+          aria-label={copy.fundSources}
+          aria-busy={walletPending.add}
+          className="mt-4 list-none rounded-2xl bg-surface-container px-4 py-1"
+        >
           {list.length ? (
             list.map((w) => {
               const used = walletUsage(w.id);
