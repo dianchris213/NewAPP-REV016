@@ -39,7 +39,8 @@ export function TopBar({
   title: string;
   actions?: ReactNode;
 }) {
-  const { user, notifications, unreadCount, markNotificationsRead, updateProfile } = useApp();
+  const { user, notifications, unreadCount, markNotificationsRead, updateProfile, profileSaving } =
+    useApp();
   const tg = useTelegramUser();
   const [editOpen, setEditOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -286,9 +287,14 @@ export function TopBar({
           <button
             type="submit"
             data-testid="profile-save-button"
-            className="gradient-primary flex h-12 items-center justify-center rounded-full text-[14px] font-semibold text-on-primary-container transition-transform active:scale-95"
+            disabled={profileSaving}
+            aria-busy={profileSaving}
+            className="gradient-primary flex h-12 items-center justify-center gap-2 rounded-full text-[14px] font-semibold text-on-primary-container transition-transform active:scale-95 disabled:opacity-60"
           >
-            Simpan Perubahan
+            {profileSaving ? (
+              <Icon name="progress_activity" className="animate-spin text-[18px]" />
+            ) : null}
+            {profileSaving ? "Menyimpan…" : "Simpan Perubahan"}
           </button>
         </form>
       </FullScreenModal>
