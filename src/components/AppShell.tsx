@@ -119,10 +119,16 @@ export function TopBar({
   }, [markNotificationsRead]);
 
   const submitProfile = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
-      updateProfile({ name: nameDraft.trim(), avatar: avatarDraft });
+      // Optimistic: the store applies the change immediately, the button shows
+      // a busy state until the write settles, then the sheet closes.
+      const ok = await updateProfile({ name: nameDraft.trim(), avatar: avatarDraft });
       setEditOpen(false);
+      if (!ok) {
+        toast.info("Tidak ada perubahan profil");
+        return;
+      }
       toast.success("Profil diperbarui", {
         description: avatarDraft ? "Nama dan foto profil tersimpan." : "Nama profil tersimpan.",
       });
