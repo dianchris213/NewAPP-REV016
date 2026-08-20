@@ -418,11 +418,16 @@ function Wallet() {
         <AddWalletSheet
           onClose={() => setAddOpen(false)}
           onSubmit={(payload) => {
-            addWallet(payload);
-            setAddOpen(false);
-            toast.success("Kantong ditambahkan", {
-              description: `${payload.name} · ${formatIDR(payload.balance)}`,
+            void addWallet(payload).then((ok) => {
+              if (!ok) {
+                toast.error("Nama kantong tidak valid atau duplikat.");
+                return;
+              }
+              toast.success("Kantong ditambahkan", {
+                description: `${payload.name} · ${formatIDR(payload.balance)}`,
+              });
             });
+            setAddOpen(false);
           }}
         />
       ) : null}
