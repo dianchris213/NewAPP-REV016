@@ -221,9 +221,11 @@ type AppState = {
     type: WalletType;
     provider?: string;
     balance: number;
-  }) => boolean;
-  renameWallet: (id: string, name: string) => boolean;
-  deleteWallet: (id: string) => boolean;
+  }) => Promise<boolean>;
+  renameWallet: (id: string, name: string) => Promise<boolean>;
+  deleteWallet: (id: string) => Promise<boolean>;
+  /** In-flight fund-source mutations, for loading state / optimistic UI. */
+  walletPending: { add: boolean; byId: Record<string, "rename" | "delete"> };
   walletUsage: (id: string) => number;
   topUpWallet: (input: { walletId: string; amount: number; source?: string }) => boolean;
   transferBetweenWallets: (input: { fromId: string; toId: string; amount: number }) => boolean;
