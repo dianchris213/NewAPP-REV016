@@ -46,12 +46,19 @@ const ACTIVITY_FILTERS: { value: "all" | WalletActivityKind; label: string }[] =
   { value: "all", label: "Semua" },
   { value: "topup", label: "Isi Saldo" },
   { value: "transfer", label: "Transfer" },
+  { value: "create", label: "Dibuat" },
+  { value: "rename", label: "Diubah" },
+  { value: "delete", label: "Dihapus" },
+  { value: "profile", label: "Profil" },
 ];
 
 const ACTIVITY_META: Record<WalletActivityKind, { icon: string; tone: string }> = {
   topup: { icon: "account_balance_wallet", tone: "bg-success/15 text-success" },
   transfer: { icon: "swap_horiz", tone: "bg-primary-container/25 text-primary" },
   create: { icon: "add_circle", tone: "bg-surface-variant text-on-surface-variant" },
+  rename: { icon: "edit", tone: "bg-primary-container/25 text-primary" },
+  delete: { icon: "delete", tone: "bg-error/15 text-error" },
+  profile: { icon: "person", tone: "bg-surface-variant text-on-surface-variant" },
 };
 
 const WALLET_ICON: Record<WalletType, string> = {
