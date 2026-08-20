@@ -350,8 +350,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const lockApp = useCallback(() => setLocked(true), []);
 
+  const pushActivity = useCallback((activity: Omit<WalletActivity, "id" | "date">) => {
+    setWalletActivity((prev) => [
+      {
+        ...activity,
+        id: `wa${Date.now()}${Math.round(Math.random() * 1000)}`,
+        date: new Date().toISOString(),
+      },
+      ...prev,
+    ]);
+  }, []);
+
+  /** Simulated commit window so optimistic UI can show a real busy state. */
+  const settle = () => new Promise<void>((r) => setTimeout(r, 260));
+
+  const markPending = useCallback((id: string, kind: "rename" | "delete" | null) => {
+    setWalletPending((prev) => {
+      const byId = { ...prev.byId };
+      if (kind) byId[id] = kind;
+      else delete byId[id];
+      return { ...prev, byId };
+    });
+  }, []);
+
   const addWallet = useCallback(
-    (input: { name: string; type: WalletType; provider?: string; balance: number }) => {
+    async (input: { name: string; type: WalletType; provider?: string; balance: number }) => {
       const name = input.name.trim().replace(/\s+/g, " ");
       if (name.length < 2 || name.length > 24) return false;
       let ok = false;
@@ -363,26 +386,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
         balance: Math.max(0, Math.round(input.balance) || 0),
         ...(input.provider?.trim() ? { provider: input.provider.trim() } : {}),
       };
+      setWalletPending((prev) => ({ ...prev, add: true }));
+      // Optimistic insert: the card appears instantly, duplicates are rejected.
       setWallets((prev) => {
         if (prev.some((w) => w.name.toLowerCase() === name.toLowerCase())) return prev;
         ok = true;
         return [...prev, wallet];
       });
+      await settle();
+      setWalletPending((prev) => ({ ...prev, add: false }));
       if (!ok) return false;
-      setWalletActivity((prev) => [
-        {
-          id: `wa${Date.now()}`,
-          kind: "create",
-          title: "Kantong Dibuat",
-          detail: `${WALLET_TYPE_LABEL[wallet.type]}${wallet.provider ? ` · ${wallet.provider}` : ""}`,
-          amount: wallet.balance,
-          date: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
+      pushActivity({
+        kind: "create",
+        title: "Sumber Dana Dibuat",
+        detail: `${wallet.name} · ${WALLET_TYPE_LABEL[wallet.type]}${wallet.provider ? ` · ${wallet.provider}` : ""}`,
+        amount: wallet.balance,
+      });
       return true;
     },
-    [],
+    [pushActivity],
   );
 
   /** How many records still reference this fund source (transactions + categories). */
@@ -393,45 +415,74 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [categories, transactions],
   );
 
-  const renameWallet = useCallback((id: string, next: string) => {
-    const name = next.trim().replace(/\s+/g, " ");
-    if (!id || name.length < 2 || name.length > 24) return false;
-    let ok = false;
-    setWallets((prev) => {
-      const target = prev.find((w) => w.id === id);
-      if (!target) return prev;
-      const duplicate = prev.some(
-        (w) => w.id !== id && w.name.toLowerCase() === name.toLowerCase(),
-      );
-      if (duplicate) return prev;
-      ok = true;
-      return prev.map((w) => (w.id === id ? { ...w, name } : w));
-    });
-    return ok;
-  }, []);
+  const renameWallet = useCallback(
+    async (id: string, next: string) => {
+      const name = next.trim().replace(/\s+/g, " ");
+      if (!id || name.length < 2 || name.length > 24) return false;
+      let ok = false;
+      let before = "";
+      markPending(id, "rename");
+      setWallets((prev) => {
+        const target = prev.find((w) => w.id === id);
+        if (!target) return prev;
+        const duplicate = prev.some(
+          (w) => w.id !== id && w.name.toLowerCase() === name.toLowerCase(),
+        );
+        if (duplicate || target.name === name) {
+          if (target.name === name) {
+            ok = true;
+            before = target.name;
+          }
+          return prev;
+        }
+        ok = true;
+        before = target.name;
+        return prev.map((w) => (w.id === id ? { ...w, name } : w));
+      });
+      await settle();
+      markPending(id, null);
+      if (ok && before !== name) {
+        pushActivity({
+          kind: "rename",
+          title: "Sumber Dana Diubah",
+          detail: `${before} → ${name}`,
+          amount: 0,
+        });
+      }
+      return ok;
+    },
+    [markPending, pushActivity],
+  );
 
   const deleteWallet = useCallback(
-    (id: string) => {
+    async (id: string) => {
       if (!id) return false;
       if (walletUsage(id) > 0) return false;
       let ok = false;
+      let removed: Wallet | undefined;
+      markPending(id, "delete");
       setWallets((prev) => {
-        if (!prev.some((w) => w.id === id)) return prev;
+        removed = prev.find((w) => w.id === id);
+        if (!removed) return prev;
         ok = true;
         return prev.filter((w) => w.id !== id);
       });
+      await settle();
+      markPending(id, null);
+      if (ok && removed) {
+        pushActivity({
+          kind: "delete",
+          title: "Sumber Dana Dihapus",
+          detail: `${removed.name} · ${WALLET_TYPE_LABEL[removed.type]}`,
+          amount: removed.balance,
+        });
+      }
       return ok;
     },
-    [walletUsage],
+    [markPending, pushActivity, walletUsage],
   );
 
 
-  const pushActivity = useCallback((activity: Omit<WalletActivity, "id" | "date">) => {
-    setWalletActivity((prev) => [
-      { ...activity, id: `wa${Date.now()}${Math.round(Math.random() * 1000)}`, date: new Date().toISOString() },
-      ...prev,
-    ]);
-  }, []);
 
   const topUpWallet = useCallback(
     ({ walletId, amount, source }: { walletId: string; amount: number; source?: string }) => {
