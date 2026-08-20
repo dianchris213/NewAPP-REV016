@@ -71,6 +71,8 @@ type Dict = {
   fundSourceType: string;
   fundSourceBalance: string;
   invalidFundSource: string;
+  fundSourceHint: string;
+  saving: string;
   fundSourceInUse: string;
   fundSourceAdded: string;
   fundSourceRenamed: string;
@@ -150,6 +152,8 @@ const dictionaries: Record<Language, Dict> = {
     fundSourceType: "Jenis",
     fundSourceBalance: "Saldo Awal",
     invalidFundSource: "Nama sumber dana 2-24 karakter dan tidak boleh duplikat.",
+    fundSourceHint: "Nama 2-24 karakter, unik antar sumber dana.",
+    saving: "Menyimpan…",
     fundSourceInUse: "Sumber dana masih dipakai dan tidak bisa dihapus.",
     fundSourceAdded: "Sumber dana ditambahkan",
     fundSourceRenamed: "Nama sumber dana diperbarui",
@@ -227,6 +231,8 @@ const dictionaries: Record<Language, Dict> = {
     fundSourceType: "Type",
     fundSourceBalance: "Starting Balance",
     invalidFundSource: "Fund source name must be 2-24 characters and unique.",
+    fundSourceHint: "Name must be 2-24 characters and unique.",
+    saving: "Saving…",
     fundSourceInUse: "This fund source is still in use and cannot be deleted.",
     fundSourceAdded: "Fund source added",
     fundSourceRenamed: "Fund source renamed",

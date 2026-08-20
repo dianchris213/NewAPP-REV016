@@ -461,7 +461,7 @@ function FundSourceSheet({ onClose }: { onClose: () => void }) {
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
-                            commitRename(w.id);
+                            void commitRename(w.id);
                           }
                           if (e.key === "Escape") {
                             e.preventDefault();
@@ -488,7 +488,9 @@ function FundSourceSheet({ onClose }: { onClose: () => void }) {
                           type="button"
                           aria-label={copy.save}
                           data-testid={`fund-source-rename-save-${w.id}`}
-                          onClick={() => commitRename(w.id)}
+                          disabled={!!walletPending.byId[w.id]}
+                          aria-busy={!!walletPending.byId[w.id]}
+                          onClick={() => void commitRename(w.id)}
                           className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-container/40 text-primary focus-visible:ring-2 focus-visible:ring-primary/60"
                         >
                           <Icon name="check" className="text-[18px]" />
@@ -525,7 +527,9 @@ function FundSourceSheet({ onClose }: { onClose: () => void }) {
                           aria-label={`${copy.delete} ${w.name}`}
                           data-testid={`fund-source-delete-${w.id}`}
                           aria-disabled={used > 0}
-                          onClick={() => remove(w.id)}
+                          disabled={!!walletPending.byId[w.id]}
+                          aria-busy={!!walletPending.byId[w.id]}
+                          onClick={() => void remove(w.id)}
                           className={`flex h-9 w-9 items-center justify-center rounded-full bg-surface-variant focus-visible:ring-2 focus-visible:ring-primary/60 ${
                             used > 0 ? "text-on-surface-variant/40" : "text-error"
                           }`}
