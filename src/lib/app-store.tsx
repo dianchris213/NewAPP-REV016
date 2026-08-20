@@ -253,6 +253,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [txFilters, setTxFiltersState] = useState<TxFilters>(defaultTxFilters);
   const [notifications] = useState<AppNotification[]>(defaultNotifications);
   const [unreadCount, setUnreadCount] = useState(defaultNotifications.length);
+  const [walletPending, setWalletPending] = useState<{
+    add: boolean;
+    byId: Record<string, "rename" | "delete">;
+  }>({ add: false, byId: {} });
+  const [profileSaving, setProfileSaving] = useState(false);
 
   const addCategory = useCallback(
     (input: { name: string; type: TxType; walletId?: string }) => {
