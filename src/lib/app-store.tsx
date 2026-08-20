@@ -548,22 +548,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
    * are touched, and `avatar: ""` is an explicit "remove photo" instruction —
    * so a name-only edit can never wipe or duplicate the avatar.
    */
-  const updateProfile = useCallback((update: { name?: string; avatar?: string }) => {
-    setUser((prev) => {
-      if (!prev) return prev;
-      const next: User = { ...prev };
-      if (typeof update.name === "string" && update.name.trim()) {
-        next.name = update.name.trim().slice(0, 40);
+  const updateProfile = useCallback(
+    async (update: { name?: string; avatar?: string }) => {
+      let changes: string[] = [];
+      let ok = false;
+      setProfileSaving(true);
+      // Optimistic profile write: header/avatar reflect the change instantly.
+      setUser((prev) => {
+        if (!prev) return prev;
+        const next: User = { ...prev };
+        if (typeof update.name === "string" && update.name.trim()) {
+          next.name = update.name.trim().slice(0, 40);
+        }
+        if (typeof update.avatar === "string") {
+          const avatar = update.avatar.trim();
+          if (avatar) next.avatar = avatar;
+          else delete next.avatar;
+        }
+        if (next.name === prev.name && next.avatar === prev.avatar) return prev;
+        ok = true;
+        changes = [
+          next.name !== prev.name ? `Nama: ${prev.name} → ${next.name}` : "",
+          next.avatar !== prev.avatar ? (next.avatar ? "Foto profil diperbarui" : "Foto profil dihapus") : "",
+        ].filter(Boolean);
+        return next;
+      });
+      await settle();
+      setProfileSaving(false);
+      if (ok) {
+        pushActivity({
+          kind: "profile",
+          title: "Profil Diperbarui",
+          detail: changes.join(" · "),
+          amount: 0,
+        });
       }
-      if (typeof update.avatar === "string") {
-        const avatar = update.avatar.trim();
-        if (avatar) next.avatar = avatar;
-        else delete next.avatar;
-      }
-      if (next.name === prev.name && next.avatar === prev.avatar) return prev;
-      return next;
-    });
-  }, []);
+      return ok;
+    },
+    [pushActivity],
+  );
 
   const setTxFilters = useCallback((update: Partial<TxFilters>) => {
     setTxFiltersState((prev) => ({ ...prev, ...update }));
