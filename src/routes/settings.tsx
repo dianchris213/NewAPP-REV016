@@ -250,7 +250,7 @@ function SettingsPage() {
 const WALLET_TYPES: WalletType[] = ["cash", "bank", "ewallet"];
 
 /** Manage user-owned fund sources (Sumber Dana). Empty by default. */
-function FundSourceSheet({ onClose }: { onClose: () => void }) {
+export function FundSourceSheet({ onClose }: { onClose: () => void }) {
   const { language, wallets, addWallet, renameWallet, deleteWallet, walletUsage, walletPending } =
     useApp();
   const copy = t(language);
